@@ -2,7 +2,7 @@
 
 All notable changes to `laravel-fuse` will be documented in this file
 
-## 0.1.0 - 2026-10-06
+## 1.0.0 - 2026-10-06
 
 ### Added
 
