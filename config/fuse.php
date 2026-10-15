@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Vortech\Fuse\Enums\FuseEditor;
 use Vortech\Fuse\Enums\FuseSeverity;
 
 return [
@@ -64,6 +65,22 @@ return [
     */
 
     'fail_at_severity' => FuseSeverity::Low,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Editor
+    |--------------------------------------------------------------------------
+    |
+    | Makes the file locations in the console output clickable in terminals
+    | that support hyperlinks (iTerm2, VS Code, Ghostty, WezTerm, Kitty, ...).
+    | Use a FuseEditor case or its name (phpstorm, idea, vscode, cursor, zed,
+    | sublime, textmate) to open the file at the right line in that editor.
+    | Defaults to phpstorm. Set it to null for plain file:// links that open
+    | the file in the default application.
+    |
+    */
+
+    'editor' => env('FUSE_EDITOR', FuseEditor::PhpStorm->value),
 
     /*
     |--------------------------------------------------------------------------

@@ -22,7 +22,7 @@
 
 Temporary code has a habit of becoming permanent. A `// TODO remove later` comment is invisible to your tooling, so nobody is ever reminded. Fuse makes the debt machine-readable:
 
-| | `// TODO remove later` | `#[Fuse]` |
+| | `// TODO remove later` | `#[Fuse]` / `#[Workaround]` … |
 |---|---|---|
 | Says why the code exists | maybe | required (`reason`) |
 | Has a deadline | no | required (`expires`) |
@@ -75,15 +75,17 @@ final class NavGateway
 The attribute works on classes, methods, properties (including promoted constructor properties) and functions, and it is repeatable:
 
 ```php
+use Vortech\Fuse\Attributes\Workaround;
+use Vortech\Fuse\Enums\FuseSeverity;
+
 final class InvoiceService
 {
-    #[Fuse(
+    #[Workaround(
         reason: 'Temporary retry logic until billing provider fixes timeout issue',
         expires: '2026-11-30',
         owner: 'billing',
         issue: 'BILL-482',
         severity: FuseSeverity::High,
-        type: FuseType::Workaround,
         replacement: 'Provider native retry handling',
     )]
     private function retryLegacyRequest(): void
@@ -95,7 +97,7 @@ final class InvoiceService
 
 ### Type-specific attributes
 
-Instead of passing `type:` to `#[Fuse]`, use the attribute named after the type. It takes the same arguments, except `type`:
+Every `FuseType` has its own attribute, so you can say what kind of temporary code it is without passing `type:` to `#[Fuse]`. They live in `Vortech\Fuse\Attributes`, take the same arguments as `#[Fuse]` except `type`, work on the same targets and are repeatable:
 
 | Attribute | Type |
 |---|---|
@@ -120,7 +122,9 @@ private function retryLegacyRequest(): void
 }
 ```
 
-All of them are scanned, listed and checked exactly like `#[Fuse]`. `#[Fuse]` stays available for when you want to set the type explicitly.
+All of them are scanned, listed and checked exactly like `#[Fuse]`. `#[Fuse]` stays available for when you want to set the type explicitly (it defaults to `FuseType::TechnicalDebt`). Passing `type:` to a type-specific attribute is reported as an invalid attribute.
+
+> `#[Deprecated]` shares its short name with PHP 8.4's built-in `#[\Deprecated]`. Import `Vortech\Fuse\Attributes\Deprecated` (or alias it) to use Fuse's version.
 
 ### 2. Check it in CI
 
@@ -129,28 +133,38 @@ php artisan fuse:check
 ```
 
 ```text
-Fuse check
+ FUSE  3 items in 3 files
 
-  ✓ 18 active
-  ⚠ 3 expiring
-  ✗ 2 expired
+  ✗ 1 expired    ⚠ 1 expiring    ✓ 1 active
 
-FAIL
+ FAILING (1)
 
-FAILING
+   HIGH  app/Services/NavGateway.php:7
+  Temporary compatibility layer for NAV API v3
 
-[HIGH] app/Services/NavGateway.php:12
-Temporary compatibility layer for NAV API v3
+    Expired 2026-09-30 (15 days ago)
+    Target       App\Services\NavGateway
+    Owner        integrations
+    Issue        FIS-142
+    Replacement  NavGatewayV4
 
-  Expired 2026-12-01
-  Target       App\Services\NavGateway
-  Owner        integrations
-  Issue        FIS-142
+ WARNINGS (1)
+
+   MEDIUM  app/Services/InvoiceService.php:8
+  Retry logic until billing fixes timeouts
+
+    Expires 2026-10-19 (in 4 days)
+    Target       App\Services\InvoiceService::retry()
+    Owner        billing
+
+ FAIL  1 fuse to fix
 ```
 
 That is all. There is no database to set up and no dashboard to run.
 
 ### Metadata
+
+These arguments apply to `#[Fuse]` and to every type-specific attribute (except `type`, see above).
 
 | Argument | Required | Description |
 |---|---|---|
@@ -159,7 +173,7 @@ That is all. There is no database to set up and no dashboard to run.
 | `owner` | no | Person, team or domain responsible. |
 | `issue` | no | Ticket or issue reference, e.g. `FIS-142`, `#142` or a URL. |
 | `severity` | no | `FuseSeverity::Low`, `Medium` (default), `High` or `Critical`. |
-| `type` | no | `FuseType::TechnicalDebt` (default), `Workaround`, `Temporary`, `Deprecated`, `Migration` or `Fallback`. |
+| `type` | no | `FuseType::TechnicalDebt` (default), `Workaround`, `Temporary`, `Deprecated`, `Migration` or `Fallback`. Only on `#[Fuse]`: the [type-specific attributes](#type-specific-attributes) set it for you. |
 | `replacement` | no | What is going to replace the code. |
 | `created` | no | Creation date, `YYYY-MM-DD`. |
 
@@ -258,11 +272,24 @@ Publish the config with `php artisan fuse:install` (or `php artisan vendor:publi
 | `warn_within_days` | `14` | Items expiring within this window are "expiring". |
 | `fail_within_days` | `0` | `fuse:check` also fails for items expiring within this window. |
 | `fail_at_severity` | `FuseSeverity::Low` | Minimum severity that can fail CI (enum case or string). |
+| `editor` | `env('FUSE_EDITOR', 'phpstorm')` | Makes file locations clickable in the console output. See below. |
 | `require_owner` | `false` | Items without `owner` are invalid. |
 | `require_issue` | `false` | Items without `issue` are invalid. |
 | `cache.enabled` | `true` | Cache parsed metadata per file. |
 | `cache.store` | `null` | Cache store to use. `null` is the default store. |
 | `cache.ttl` | `3600` | Cache lifetime in seconds. |
+
+### Clickable file locations
+
+In terminals that support hyperlinks (iTerm2, VS Code, Ghostty, WezTerm, Kitty), the `file:line` locations printed by `fuse:check` are clickable. They open in PhpStorm at the right line by default. Set `FUSE_EDITOR` (or `fuse.editor`) to use another editor:
+
+```dotenv
+FUSE_EDITOR=vscode
+```
+
+Supported editors: `phpstorm`, `idea`, `vscode`, `cursor`, `zed`, `sublime` and `textmate` (also available as the `Vortech\Fuse\Enums\FuseEditor` enum). Set `FUSE_EDITOR=null` (or `fuse.editor` to `null`) for plain `file://` links that open the file in your default application.
+
+PhpStorm's built-in terminal does not support hyperlinks, but it already makes the printed `app/Services/NavGateway.php:7` clickable on its own.
 
 ## Programmatic API
 

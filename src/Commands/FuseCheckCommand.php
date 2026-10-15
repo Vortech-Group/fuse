@@ -13,6 +13,7 @@ use Vortech\Fuse\Exceptions\InvalidFuseConfiguration;
 use Vortech\Fuse\Reporting\ConsoleReporter;
 use Vortech\Fuse\Reporting\GithubReporter;
 use Vortech\Fuse\Reporting\JsonReporter;
+use Vortech\Fuse\Support\FuseConfig;
 
 final class FuseCheckCommand extends Command
 {
@@ -68,7 +69,10 @@ final class FuseCheckCommand extends Command
     private function reporter(string $format): FuseReporter
     {
         return match ($format) {
-            'console' => new ConsoleReporter,
+            'console' => new ConsoleReporter(
+                basePath: $this->laravel->basePath(),
+                editor: $this->laravel->make(FuseConfig::class)->editor(),
+            ),
             'json' => new JsonReporter,
             'github' => new GithubReporter,
             default => throw InvalidFuseConfiguration::invalidValue('format', $format, ['console', 'json', 'github']),

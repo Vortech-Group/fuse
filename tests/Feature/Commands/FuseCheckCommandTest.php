@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Artisan;
+use Vortech\Fuse\Enums\FuseEditor;
 use Vortech\Fuse\Enums\FuseSeverity;
+use Vortech\Fuse\FuseManager;
+use Vortech\Fuse\Reporting\ConsoleReporter;
 
 function useFixtures(object $test, array $only = []): void
 {
@@ -142,4 +145,26 @@ it('works with --no-cache', function () {
     useFixtures($this, ['ExpiredFuse.php']);
 
     $this->artisan('fuse:check', ['--no-cache' => true])->assertExitCode(1);
+});
+
+it('links locations to the source file', function () {
+    $this->scanning([__DIR__.'/../../Fixtures/ExpiredFuse.php'], dirname(__DIR__, 3));
+    $report = app(FuseManager::class)->check();
+    $base = dirname(__DIR__, 3);
+
+    $plain = (new ConsoleReporter($base))->report($report);
+    $phpstorm = (new ConsoleReporter($base, FuseEditor::PhpStorm))->report($report);
+
+    expect($plain)->toContain('<href=file://'.$base.'/tests/Fixtures/ExpiredFuse.php;options=bold>tests/Fixtures/ExpiredFuse.php:13</>')
+        ->and($phpstorm)->toContain('<href=phpstorm://open?file='.$base.'/tests/Fixtures/ExpiredFuse.php&line=13;options=bold>')
+        ->and((new ConsoleReporter)->report($report))->not->toContain('<href=');
+});
+
+it('uses the configured editor and rejects an unknown one', function () {
+    $this->scanning([__DIR__.'/../../Fixtures/ExpiredFuse.php'], dirname(__DIR__, 3));
+    config(['fuse.editor' => 'vscode']);
+    $this->artisan('fuse:check')->assertExitCode(1);
+
+    config(['fuse.editor' => 'notepad']);
+    $this->artisan('fuse:check')->assertExitCode(2);
 });

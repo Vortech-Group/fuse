@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Vortech\Fuse\Support;
 
 use Illuminate\Contracts\Config\Repository;
+use Vortech\Fuse\Enums\FuseEditor;
 use Vortech\Fuse\Enums\FuseSeverity;
 use Vortech\Fuse\Exceptions\InvalidFuseConfiguration;
 
@@ -72,6 +73,26 @@ final readonly class FuseConfig
         } catch (InvalidFuseConfiguration) {
             throw InvalidFuseConfiguration::invalidType('fail_at_severity', 'a FuseSeverity case or one of: low, medium, high, critical');
         }
+    }
+
+    /**
+     * The editor used for clickable file links in the console output, or null for plain file:// links.
+     *
+     * @throws InvalidFuseConfiguration
+     */
+    public function editor(): ?FuseEditor
+    {
+        $value = $this->config->get('fuse.editor');
+
+        if (blank($value)) {
+            return null;
+        }
+
+        if (! $value instanceof FuseEditor && ! is_string($value)) {
+            throw InvalidFuseConfiguration::invalidType('editor', 'a FuseEditor case, an editor name or null');
+        }
+
+        return FuseEditor::fromInput($value);
     }
 
     /**

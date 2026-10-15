@@ -74,6 +74,7 @@ final class FuseDoctorCommand extends Command
             $config->failWithinDays();
             $config->requireOwner();
             $config->requireIssue();
+            $config->editor();
             $this->addOk('Configuration values are valid');
 
             $finder = $this->laravel->make(SourceFinder::class);

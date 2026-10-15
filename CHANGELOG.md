@@ -2,6 +2,16 @@
 
 All notable changes to `laravel-fuse` will be documented in this file
 
+## 1.2.0 - 2026-10-15
+
+### Added
+
+- Clickable `file:line` locations in the `fuse:check` console output, with an `fuse.editor` / `FUSE_EDITOR` setting (PhpStorm by default) (`phpstorm`, `idea`, `vscode`, `cursor`, `zed`, `sublime`, `textmate`) to open files at the right line
+
+### Changed
+
+- Redesigned the `fuse:check` console output with severity badges, a summary line and a final PASS/FAIL verdict
+
 ## 1.1.0 - 2026-10-15
 
 ### Added
