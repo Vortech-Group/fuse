@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Vortech\Fuse\Commands;
 
 use Illuminate\Console\Command;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Vortech\Fuse\FuseServiceProvider;
 
-#[AsCommand(name: 'fuse:install', description: 'Publish the Fuse configuration file')]
 final class FuseInstallCommand extends Command
 {
     protected $signature = 'fuse:install {--force : Overwrite the existing configuration file}';
+
+    protected $description = 'Publish the Fuse configuration file';
 
     public function handle(): int
     {

@@ -24,7 +24,7 @@ use Vortech\Fuse\Support\Path;
 final class PhpParserFuseScanner implements FuseScanner
 {
     /** Bump whenever the shape of cached entries or the scanning rules change. */
-    private const string CACHE_VERSION = '1';
+    private const string CACHE_VERSION = '2';
 
     private ?Parser $parser = null;
 
@@ -73,7 +73,7 @@ final class PhpParserFuseScanner implements FuseScanner
         $size = @filesize($file);
         $cacheKey = 'fuse:'.self::CACHE_VERSION.':'.sha1($file);
 
-        if ($this->cache !== null && $mtime !== false && $size !== false) {
+        if (filled($this->cache) && $mtime !== false && $size !== false) {
             $cached = $this->cache->get($cacheKey);
 
             if ($cached instanceof CachedFile && $cached->mtime === $mtime && $cached->size === $size && $cached->display === $display) {
@@ -83,7 +83,7 @@ final class PhpParserFuseScanner implements FuseScanner
 
         [$items, $problems] = $this->parseFile($file, $display);
 
-        if ($this->cache !== null && $mtime !== false && $size !== false) {
+        if (filled($this->cache) && $mtime !== false && $size !== false) {
             $this->cache->put($cacheKey, new CachedFile($mtime, $size, $display, $items, $problems), $this->cacheTtl);
         }
 

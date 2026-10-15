@@ -55,10 +55,10 @@ final readonly class FuseItem
     public function target(): string
     {
         return match (true) {
-            $this->class !== null && $this->method !== null => $this->class.'::'.$this->method.'()',
-            $this->class !== null && $this->property !== null => $this->class.'::$'.$this->property,
-            $this->class !== null => $this->class,
-            $this->method !== null => $this->method.'()',
+            filled($this->class) && filled($this->method) => $this->class.'::'.$this->method.'()',
+            filled($this->class) && filled($this->property) => $this->class.'::$'.$this->property,
+            filled($this->class) => $this->class,
+            filled($this->method) => $this->method.'()',
             default => $this->file,
         };
     }
@@ -84,7 +84,7 @@ final readonly class FuseItem
             'created' => $this->createdAt?->format('Y-m-d'),
         ];
 
-        if ($today !== null) {
+        if (filled($today)) {
             $data['status'] = $this->status($today, $warnWithinDays)->value;
             $data['days_remaining'] = $this->daysRemaining($today);
         }

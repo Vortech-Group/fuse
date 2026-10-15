@@ -15,10 +15,11 @@ use Vortech\Fuse\Attributes\Fuse;
 use Vortech\Fuse\Data\FuseItem;
 use Vortech\Fuse\Data\FuseProblem;
 use Vortech\Fuse\Enums\FuseProblemType;
+use Vortech\Fuse\Enums\FuseType;
 use Vortech\Fuse\Exceptions\InvalidFuseAttribute;
 
 /**
- * Collects every `#[Fuse]` attribute of a single file. Expects names to be resolved by the NameResolver first.
+ * Collects every `#[Fuse]` and type-specific attribute of a single file. Expects names to be resolved by the NameResolver first.
  */
 final class FuseNodeVisitor extends NodeVisitorAbstract
 {
@@ -105,12 +106,15 @@ final class FuseNodeVisitor extends NodeVisitorAbstract
     {
         foreach ($groups as $group) {
             foreach ($group->attrs as $attribute) {
-                if (strcasecmp(ltrim($attribute->name->toString(), '\\'), Fuse::class) !== 0) {
+                $name = ltrim($attribute->name->toString(), '\\');
+                $impliedType = FuseType::fromAttributeClass($name);
+
+                if (blank($impliedType) && strcasecmp($name, Fuse::class) !== 0) {
                     continue;
                 }
 
                 try {
-                    $this->items[] = $this->resolver->resolve($attribute, $this->file, $class, $method, $property);
+                    $this->items[] = $this->resolver->resolve($attribute, $this->file, $class, $method, $property, $impliedType);
                 } catch (InvalidFuseAttribute $e) {
                     $this->problems[] = new FuseProblem(
                         FuseProblemType::InvalidAttribute,
@@ -125,6 +129,6 @@ final class FuseNodeVisitor extends NodeVisitorAbstract
 
     private function currentClass(): ?string
     {
-        return $this->classes === [] ? null : $this->classes[array_key_last($this->classes)];
+        return $this->classes[array_key_last($this->classes)] ?? null;
     }
 }

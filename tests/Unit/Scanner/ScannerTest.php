@@ -293,3 +293,67 @@ it('round trips cached entries through a serializing cache store', function () {
         ->and($second->problems)->toEqual($first->problems)
         ->and($second->items->all()[0]->owner)->toBe('me');
 });
+
+it('maps every type-specific attribute to its fuse type', function () {
+    [$items, $problems] = scanSource(['A.php' => <<<'PHP'
+        <?php
+        namespace App;
+
+        use Vortech\Fuse\Attributes\Deprecated;
+        use Vortech\Fuse\Attributes\Fallback;
+        use Vortech\Fuse\Attributes\Migration;
+        use Vortech\Fuse\Attributes\TechnicalDebt;
+        use Vortech\Fuse\Attributes\Temporary;
+        use Vortech\Fuse\Attributes\Workaround;
+        use Vortech\Fuse\Enums\FuseSeverity;
+
+        #[TechnicalDebt('technical-debt', '2099-01-01')]
+        #[Workaround(reason: 'workaround', expires: '2099-01-01', severity: FuseSeverity::High, owner: 'billing')]
+        #[Temporary('temporary', '2099-01-01', 'backend', 'APP-1', FuseSeverity::Low, 'New', '2026-10-05')]
+        #[Deprecated('deprecated', '2099-01-01')]
+        #[\Vortech\Fuse\Attributes\Migration('migration', '2099-01-01')]
+        #[Fallback('fallback', '2099-01-01')]
+        class All {}
+        PHP]);
+
+    $byReason = array_column(array_map(fn (FuseItem $i) => [$i->reason, $i], $items), 1, 0);
+
+    expect($problems)->toBe([])
+        ->and(array_map(fn (FuseItem $i) => $i->type, $byReason))->toBe([
+            'technical-debt' => FuseType::TechnicalDebt,
+            'workaround' => FuseType::Workaround,
+            'temporary' => FuseType::Temporary,
+            'deprecated' => FuseType::Deprecated,
+            'migration' => FuseType::Migration,
+            'fallback' => FuseType::Fallback,
+        ])
+        ->and($byReason['workaround']->severity)->toBe(FuseSeverity::High)
+        ->and($byReason['workaround']->owner)->toBe('billing')
+        ->and($byReason['temporary']->issue)->toBe('APP-1')
+        ->and($byReason['temporary']->replacement)->toBe('New')
+        ->and($byReason['temporary']->createdAt?->format('Y-m-d'))->toBe('2026-10-05');
+});
+
+it('rejects a type argument on type-specific attributes', function () {
+    [$items, $problems] = scanSource(['A.php' => <<<'PHP'
+        <?php
+        namespace App;
+
+        use Vortech\Fuse\Attributes\Workaround;
+        use Vortech\Fuse\Enums\FuseType;
+
+        #[Workaround(reason: 'x', expires: '2099-01-01', type: FuseType::Fallback)]
+        class Bad {}
+        PHP]);
+
+    expect($items)->toBe([])
+        ->and($problems)->toHaveCount(1)
+        ->and($problems[0]->type)->toBe(FuseProblemType::InvalidAttribute);
+});
+
+it('keeps the type-specific attribute classes in sync with the enum', function () {
+    foreach (FuseType::cases() as $case) {
+        expect(class_exists($case->attributeClass()))->toBeTrue()
+            ->and(FuseType::fromAttributeClass($case->attributeClass()))->toBe($case);
+    }
+});

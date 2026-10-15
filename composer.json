@@ -13,6 +13,10 @@
     ],
     "homepage": "https://github.com/Vortech-Group/fuse",
     "license": "MIT",
+    "support": {
+        "issues": "https://github.com/Vortech-Group/fuse/issues",
+        "source": "https://github.com/Vortech-Group/fuse"
+    },
     "type": "library",
     "authors": [
         {
@@ -22,19 +26,19 @@
         }
     ],
     "require": {
-        "php": "^8.4",
-        "illuminate/console": "^13.0",
-        "illuminate/contracts": "^13.0",
-        "illuminate/support": "^13.0",
+        "php": "^8.3",
+        "illuminate/console": "^12.0|^13.0",
+        "illuminate/contracts": "^12.0|^13.0",
+        "illuminate/support": "^12.0|^13.0",
         "nikic/php-parser": "^5.0",
         "symfony/finder": "^7.0|^8.0"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.0",
-        "orchestra/testbench": "^11.0",
-        "pestphp/pest": "^5.0",
-        "pestphp/pest-plugin-laravel": "^5.0"
+        "orchestra/testbench": "^10.0|^11.0",
+        "pestphp/pest": "^4.0|^5.0",
+        "pestphp/pest-plugin-laravel": "^4.0|^5.0"
     },
     "autoload": {
         "psr-4": {
@@ -50,10 +54,17 @@
         "test": "vendor/bin/pest",
         "test-coverage": "vendor/bin/pest --coverage-html coverage",
         "analyse": "vendor/bin/phpstan analyse --memory-limit=1G",
-        "format": "vendor/bin/pint"
+        "format": "vendor/bin/pint",
+        "lint": "vendor/bin/pint --test",
+        "ci": [
+            "@lint",
+            "@analyse",
+            "@test"
+        ]
     },
     "config": {
         "sort-packages": true,
+        "optimize-autoloader": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "phpstan/extension-installer": true

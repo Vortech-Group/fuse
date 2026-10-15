@@ -36,7 +36,7 @@ final class FuseListCommand extends Command
                 $items = $items->expired();
             }
 
-            if (($days = $this->stringOption('expiring')) !== null) {
+            if (filled($days = $this->stringOption('expiring'))) {
                 if (! ctype_digit($days)) {
                     $this->components->error('The --expiring option must be a non-negative number of days.');
 
@@ -46,15 +46,15 @@ final class FuseListCommand extends Command
                 $items = $items->expiringWithin((int) $days);
             }
 
-            if (($owner = $this->stringOption('owner')) !== null) {
+            if (filled($owner = $this->stringOption('owner'))) {
                 $items = $items->ownedBy($owner);
             }
 
-            if (($severity = $this->stringOption('severity')) !== null) {
+            if (filled($severity = $this->stringOption('severity'))) {
                 $items = $items->severityAtLeast(FuseSeverity::fromInput($severity));
             }
 
-            if (($type = $this->stringOption('type')) !== null) {
+            if (filled($type = $this->stringOption('type'))) {
                 $items = $items->ofType(FuseType::fromInput($type));
             }
         } catch (FuseException $e) {

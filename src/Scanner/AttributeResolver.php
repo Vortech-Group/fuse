@@ -21,7 +21,7 @@ use Vortech\Fuse\Exceptions\InvalidFuseAttribute;
 use Vortech\Fuse\Support\Expiration;
 
 /**
- * Turns a parsed `#[Fuse(...)]` attribute node into a {@see FuseItem} without ever loading the attributed class.
+ * Turns a parsed `#[Fuse(...)]` (or type-specific, e.g. `#[Workaround(...)]`) attribute node into a {@see FuseItem} without ever loading the attributed class.
  */
 final class AttributeResolver
 {
@@ -33,9 +33,9 @@ final class AttributeResolver
     /**
      * @throws InvalidFuseAttribute
      */
-    public function resolve(Attribute $attribute, string $file, ?string $class, ?string $method, ?string $property): FuseItem
+    public function resolve(Attribute $attribute, string $file, ?string $class, ?string $method, ?string $property, ?FuseType $impliedType = null): FuseItem
     {
-        $arguments = $this->arguments($attribute);
+        $arguments = $this->arguments($attribute, filled($impliedType));
 
         $reason = $this->requiredString($arguments, 'reason');
         $expires = $this->requiredString($arguments, 'expires');
@@ -44,7 +44,7 @@ final class AttributeResolver
             ?? throw new InvalidFuseAttribute(sprintf('Invalid expiration date "%s". Use the strict YYYY-MM-DD format.', $expires));
 
         $created = $this->optionalString($arguments, 'created');
-        $createdAt = $created === null ? null : $this->createdAt($created);
+        $createdAt = blank($created) ? null : $this->createdAt($created);
 
         return new FuseItem(
             reason: $reason,
@@ -57,7 +57,7 @@ final class AttributeResolver
             owner: $this->optionalString($arguments, 'owner'),
             issue: $this->optionalString($arguments, 'issue'),
             severity: $this->enum($arguments, 'severity', FuseSeverity::class) ?? FuseSeverity::Medium,
-            type: $this->enum($arguments, 'type', FuseType::class) ?? FuseType::TechnicalDebt,
+            type: $impliedType ?? $this->enum($arguments, 'type', FuseType::class) ?? FuseType::TechnicalDebt,
             replacement: $this->optionalString($arguments, 'replacement'),
             createdAt: $createdAt,
         );
@@ -66,8 +66,10 @@ final class AttributeResolver
     /**
      * @return array<string, Expr>
      */
-    private function arguments(Attribute $attribute): array
+    private function arguments(Attribute $attribute, bool $typed): array
     {
+        // Type-specific attributes (#[Workaround], ...) have no `type` parameter.
+        $parameters = $typed ? array_values(array_diff(self::PARAMETERS, ['type'])) : self::PARAMETERS;
         $arguments = [];
 
         foreach ($attribute->args as $position => $arg) {
@@ -75,9 +77,9 @@ final class AttributeResolver
                 throw new InvalidFuseAttribute('Argument unpacking is not supported in a Fuse attribute.');
             }
 
-            $name = $arg->name instanceof Identifier ? $arg->name->toString() : (self::PARAMETERS[$position] ?? null);
+            $name = $arg->name instanceof Identifier ? $arg->name->toString() : ($parameters[$position] ?? null);
 
-            if ($name === null || ! in_array($name, self::PARAMETERS, true)) {
+            if (blank($name) || ! in_array($name, $parameters, true)) {
                 throw new InvalidFuseAttribute(sprintf('Unknown Fuse argument "%s".', $arg->name instanceof Identifier ? $name : '#'.($position + 1)));
             }
 
@@ -119,7 +121,7 @@ final class AttributeResolver
         $value = $this->literalString($expression)
             ?? throw new InvalidFuseAttribute(sprintf('Fuse argument "%s" must be a string literal.', $name));
 
-        if (trim($value) === '') {
+        if (blank($value)) {
             throw new InvalidFuseAttribute(sprintf('Fuse argument "%s" must not be empty.', $name));
         }
 

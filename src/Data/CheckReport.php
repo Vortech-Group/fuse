@@ -42,6 +42,6 @@ final readonly class CheckReport
             $codes[] = 1;
         }
 
-        return $codes === [] ? 0 : max($codes);
+        return max([0, ...$codes]);
     }
 }

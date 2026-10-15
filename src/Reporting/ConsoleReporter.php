@@ -43,7 +43,7 @@ final class ConsoleReporter implements FuseReporter
             }
         }
 
-        if ($report->problems !== []) {
+        if (filled($report->problems)) {
             $lines[] = '';
             $lines[] = '<fg=red;options=bold>PROBLEMS</>';
 
@@ -78,7 +78,7 @@ final class ConsoleReporter implements FuseReporter
         ];
 
         foreach ($details as $label => $value) {
-            if ($value !== null) {
+            if (filled($value)) {
                 $lines[] = sprintf('  %s %s', str_pad($label, 12), OutputFormatter::escape($value));
             }
         }

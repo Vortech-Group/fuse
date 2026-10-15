@@ -29,7 +29,7 @@ final class GithubReporter implements FuseReporter
             $lines[] = $this->annotation('error', $problem->file, $problem->line, 'Fuse problem: '.$problem->message);
         }
 
-        return $lines === [] ? '' : implode(PHP_EOL, $lines).PHP_EOL;
+        return blank($lines) ? '' : implode(PHP_EOL, $lines).PHP_EOL;
     }
 
     private function message(CheckReport $report, FuseItem $item): string

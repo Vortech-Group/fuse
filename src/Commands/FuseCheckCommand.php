@@ -34,12 +34,12 @@ final class FuseCheckCommand extends Command
 
             $failWithin = $this->stringOption('fail-within');
 
-            if ($failWithin !== null && ! ctype_digit($failWithin)) {
+            if (filled($failWithin) && ! ctype_digit($failWithin)) {
                 throw new InvalidFuseConfiguration('The --fail-within option must be a non-negative number of days.');
             }
 
             $report = $this->fuse()->check(
-                failWithinDays: $failWithin === null ? null : (int) $failWithin,
+                failWithinDays: blank($failWithin) ? null : (int) $failWithin,
                 severity: $this->stringOption('severity'),
             );
         } catch (FuseException $e) {

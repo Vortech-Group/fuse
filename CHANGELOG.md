@@ -2,6 +2,19 @@
 
 All notable changes to `laravel-fuse` will be documented in this file
 
+## 1.1.0 - 2026-10-15
+
+### Added
+
+- Type-specific attributes `#[TechnicalDebt]`, `#[Workaround]`, `#[Temporary]`, `#[Deprecated]`, `#[Migration]` and `#[Fallback]` as shortcuts for `#[Fuse(type: ...)]`
+- Laravel 12 support and PHP 8.3 support
+
+### Changed
+
+- Minimum versions are now PHP 8.3 and Laravel 12 (Laravel 13 remains supported)
+- The scan cache version is bumped so existing caches pick up the new attributes
+- Stricter PHPUnit settings, Pint rules and CI timeouts; added `composer lint` and `composer ci`
+
 ## 1.0.0 - 2026-10-06
 
 ### Added

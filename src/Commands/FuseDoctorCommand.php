@@ -105,15 +105,15 @@ final class FuseDoctorCommand extends Command
             $this->addError($problem->location().' '.$problem->message, $problem->exitCode());
         }
 
-        if ($problems === []) {
+        if (blank($problems)) {
             $this->addOk('All Fuse attributes are valid');
         }
 
-        $this->warnAbout($items->filter(fn (FuseItem $item): bool => $item->owner === null)->count(), 'no owner');
-        $this->warnAbout($items->filter(fn (FuseItem $item): bool => $item->issue === null)->count(), 'no issue');
+        $this->warnAbout($items->filter(fn (FuseItem $item): bool => blank($item->owner))->count(), 'no owner');
+        $this->warnAbout($items->filter(fn (FuseItem $item): bool => blank($item->issue))->count(), 'no issue');
 
         foreach ($items as $item) {
-            if ($item->issue !== null && ! $this->isWellFormedIssue($item->issue)) {
+            if (filled($item->issue) && ! $this->isWellFormedIssue($item->issue)) {
                 $this->addWarning(sprintf('%s has a malformed issue reference "%s"', $item->location(), $item->issue));
             }
         }

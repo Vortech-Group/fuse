@@ -128,7 +128,7 @@ final class FuseCollection implements Countable, IteratorAggregate
 
     public function isEmpty(): bool
     {
-        return $this->items === [];
+        return blank($this->items);
     }
 
     public function count(): int

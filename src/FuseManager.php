@@ -65,7 +65,7 @@ final readonly class FuseManager
     public function check(?int $failWithinDays = null, FuseSeverity|string|null $severity = null): CheckReport
     {
         $failWithinDays = max($failWithinDays ?? $this->config->failWithinDays(), 0);
-        $threshold = $severity === null ? $this->config->failAtSeverity() : FuseSeverity::fromInput($severity);
+        $threshold = blank($severity) ? $this->config->failAtSeverity() : FuseSeverity::fromInput($severity);
 
         $result = $this->result();
 
@@ -73,8 +73,10 @@ final readonly class FuseManager
             ->severityAtLeast($threshold)
             ->filter(fn (FuseItem $item): bool => $result->items->daysRemaining($item) <= $failWithinDays);
 
+        $failingIds = array_map(spl_object_id(...), $failing->all());
+
         $warnings = $result->items->filter(
-            fn (FuseItem $item): bool => ! in_array($item, $failing->all(), true)
+            fn (FuseItem $item): bool => ! in_array(spl_object_id($item), $failingIds, true)
                 && $result->items->daysRemaining($item) <= $result->items->warnWithinDays(),
         );
 
@@ -100,11 +102,11 @@ final readonly class FuseManager
         $problems = [];
 
         foreach ($items as $item) {
-            if ($this->config->requireOwner() && $item->owner === null) {
+            if ($this->config->requireOwner() && blank($item->owner)) {
                 $problems[] = new FuseProblem(FuseProblemType::InvalidAttribute, 'Missing required Fuse argument "owner".', $item->file, $item->line);
             }
 
-            if ($this->config->requireIssue() && $item->issue === null) {
+            if ($this->config->requireIssue() && blank($item->issue)) {
                 $problems[] = new FuseProblem(FuseProblemType::InvalidAttribute, 'Missing required Fuse argument "issue".', $item->file, $item->line);
             }
         }

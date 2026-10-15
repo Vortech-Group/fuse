@@ -7,7 +7,7 @@
   <a href="https://packagist.org/packages/vortech/laravel-fuse"><img src="https://img.shields.io/packagist/v/vortech/laravel-fuse?style=flat-square&color=CF000F&labelColor=08090A" alt="Latest version"></a>
   <a href="https://packagist.org/packages/vortech/laravel-fuse"><img src="https://img.shields.io/packagist/dt/vortech/laravel-fuse?style=flat-square&color=8B8C8A&labelColor=08090A" alt="Downloads"></a>
   <a href="https://packagist.org/packages/vortech/laravel-fuse"><img src="https://img.shields.io/packagist/php-v/vortech/laravel-fuse?style=flat-square&color=8B8C8A&labelColor=08090A" alt="PHP version"></a>
-  <img src="https://img.shields.io/badge/laravel-13-CF000F?style=flat-square&labelColor=08090A" alt="Laravel 13">
+  <img src="https://img.shields.io/badge/laravel-12%20%7C%2013-CF000F?style=flat-square&labelColor=08090A" alt="Laravel 12 | 13">
   <a href="LICENSE.md"><img src="https://img.shields.io/packagist/l/vortech/laravel-fuse?style=flat-square&color=8B8C8A&labelColor=08090A" alt="License"></a>
 </p>
 
@@ -34,8 +34,8 @@ Fuse reads your source statically. It never boots, loads or instantiates your cl
 
 ## Requirements
 
-- PHP 8.4+
-- Laravel 13
+- PHP 8.3+
+- Laravel 12 or 13
 
 ## Installation
 
@@ -92,6 +92,35 @@ final class InvoiceService
     }
 }
 ```
+
+### Type-specific attributes
+
+Instead of passing `type:` to `#[Fuse]`, use the attribute named after the type. It takes the same arguments, except `type`:
+
+| Attribute | Type |
+|---|---|
+| `#[TechnicalDebt]` | `FuseType::TechnicalDebt` |
+| `#[Workaround]` | `FuseType::Workaround` |
+| `#[Temporary]` | `FuseType::Temporary` |
+| `#[Deprecated]` | `FuseType::Deprecated` |
+| `#[Migration]` | `FuseType::Migration` |
+| `#[Fallback]` | `FuseType::Fallback` |
+
+```php
+use Vortech\Fuse\Attributes\Workaround;
+
+#[Workaround(
+    reason: 'Retry until the billing provider fixes the timeout issue',
+    expires: '2026-11-30',
+    issue: 'BILL-482',
+)]
+private function retryLegacyRequest(): void
+{
+    //
+}
+```
+
+All of them are scanned, listed and checked exactly like `#[Fuse]`. `#[Fuse]` stays available for when you want to set the type explicitly.
 
 ### 2. Check it in CI
 
@@ -265,7 +294,7 @@ composer analyse
 composer format
 ```
 
-The suite uses [Pest](https://pestphp.com) and requires PHP 8.4+ to run.
+The suite uses [Pest](https://pestphp.com) and requires PHP 8.3+ to run.
 
 ## Changelog
 
